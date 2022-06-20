@@ -40,6 +40,8 @@ require_relative 'magento/params/create_product_link'
 Dir[File.expand_path('magento/shared/*.rb', __dir__)].map { |f| require f }
 
 module Magento
+  CONFIG_MUTEX = Mutex.new
+
   class << self
     attr_writer :configuration
 
@@ -65,11 +67,13 @@ module Magento
   end
 
   def self.with_config(params)
-    @old_configuration = configuration
-    self.configuration = configuration.copy_with(**params)
-    yield
-  ensure
-    @configuration = @old_configuration
+    CONFIG_MUTEX.synchronize do
+      @old_configuration = configuration
+      self.configuration = configuration.copy_with(**params)
+      yield
+    ensure
+      @configuration = @old_configuration
+    end
   end
 
   def self.production?
