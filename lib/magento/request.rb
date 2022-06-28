@@ -5,6 +5,8 @@ require 'http'
 
 module Magento
   class Request
+    ALLOW_SELF_SIGNED_SSL_CERTS_ENV_VAR = 'MAGENTO_ALLOW_SELF_SIGNED_SSL_CERT_ENABLED'.freeze
+
     attr_reader :config
 
     def initialize(config: Magento.configuration)
@@ -13,26 +15,42 @@ module Magento
 
     def get(resource)
       save_request(:get, url(resource))
-      handle_error http_auth.get(url(resource))
+      handle_error http_auth.get(url(resource), request_params)
     end
 
     def put(resource, body)
       save_request(:put, url(resource), body)
-      handle_error http_auth.put(url(resource), json: body)
+      handle_error http_auth.put(url(resource), request_params(json: body))
     end
 
     def post(resource, body = nil, url_completa = false)
       url = url_completa ? resource : url(resource)
       save_request(:post, url, body)
-      handle_error http_auth.post(url, json: body)
+      handle_error http_auth.post(url, request_params(json: body))
     end
 
     def delete(resource)
       save_request(:delete, url(resource))
-      handle_error http_auth.delete(url(resource))
+      handle_error http_auth.delete(url(resource), request_params)
     end
 
     private
+
+    def request_params(params = {})
+      params.merge!(ssl_context: no_ssl_context) if allow_self_signed_ssl_certificates?
+
+      params
+    end
+
+    def no_ssl_context
+      context = OpenSSL::SSL::SSLContext.new
+      context.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      context
+    end
+
+    def allow_self_signed_ssl_certificates?
+      ENV.fetch(ALLOW_SELF_SIGNED_SSL_CERTS_ENV_VAR, false).to_s.downcase == 'true'
+    end
 
     def http_auth
       HTTP.auth("Bearer #{config.token}")
