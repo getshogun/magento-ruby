@@ -18,10 +18,30 @@ RSpec.describe Magento::Request do
   describe '#get' do
     it 'calls HTTP.get with url' do
       expect_any_instance_of(HTTP::Client).to receive(:get)
-        .with('https://site.com.br/rest/magento-store/V1/products')
+        .with('https://site.com.br/rest/magento-store/V1/products', {})
         .and_return(response)
 
       subject.get('products')
+    end
+
+    context 'with SSL disabled' do
+      before do
+        allow(ENV)
+          .to receive(:fetch)
+          .with('MAGENTO_ALLOW_SELF_SIGNED_SSL_CERT_ENABLED', false)
+          .and_return('true')
+      end
+
+      it 'calls HTTP.get with url on non-HTTPS' do
+        expect_any_instance_of(HTTP::Client).to receive(:get)
+          .with(
+            'https://site.com.br/rest/magento-store/V1/products',
+            ssl_context: OpenSSL::SSL::SSLContext
+          )
+          .and_return(response)
+
+        subject.get('products')
+      end
     end
   end
 
@@ -35,6 +55,31 @@ RSpec.describe Magento::Request do
 
       subject.put('products', body)
     end
+
+    context 'with SSL disabled' do
+      before do
+        allow(ENV)
+          .to receive(:fetch)
+          .with('MAGENTO_ALLOW_SELF_SIGNED_SSL_CERT_ENABLED', false)
+          .and_return('true')
+      end
+
+      it 'calls HTTP.get with url on non-HTTPS' do
+        body = { product: { price: 22.50 } }
+
+        expect_any_instance_of(HTTP::Client).to receive(:put)
+          .with(
+            'https://site.com.br/rest/magento-store/V1/products',
+            {
+              json: body,
+              ssl_context: OpenSSL::SSL::SSLContext
+            }
+          )
+          .and_return(response)
+
+        subject.put('products', body)
+      end
+    end
   end
 
   describe '#post' do
@@ -47,15 +92,60 @@ RSpec.describe Magento::Request do
 
       subject.post('products', body)
     end
+
+    context 'with SSL disabled' do
+      before do
+        allow(ENV)
+          .to receive(:fetch)
+          .with('MAGENTO_ALLOW_SELF_SIGNED_SSL_CERT_ENABLED', false)
+          .and_return('true')
+      end
+
+      it 'calls HTTP.get with url on non-HTTPS' do
+        body = { product: { name: 'Some name', price: 22.50 } }
+
+        expect_any_instance_of(HTTP::Client).to receive(:post)
+          .with(
+            'https://site.com.br/rest/magento-store/V1/products',
+            {
+              json: body,
+              ssl_context: OpenSSL::SSL::SSLContext
+            }
+          )
+          .and_return(response)
+
+        subject.post('products', body)
+      end
+    end
   end
 
   describe '#delete' do
     it 'calls HTTP.selete with url' do
       expect_any_instance_of(HTTP::Client).to receive(:delete)
-        .with('https://site.com.br/rest/magento-store/V1/products/22')
+        .with('https://site.com.br/rest/magento-store/V1/products/22', {})
         .and_return(response)
 
       subject.delete('products/22')
+    end
+
+    context 'with SSL disabled' do
+      before do
+        allow(ENV)
+          .to receive(:fetch)
+          .with('MAGENTO_ALLOW_SELF_SIGNED_SSL_CERT_ENABLED', false)
+          .and_return('true')
+      end
+
+      it 'calls HTTP.get with url on non-HTTPS' do
+        expect_any_instance_of(HTTP::Client).to receive(:delete)
+          .with(
+            'https://site.com.br/rest/magento-store/V1/products/22',
+            ssl_context: OpenSSL::SSL::SSLContext
+          )
+          .and_return(response)
+
+        subject.delete('products/22')
+      end
     end
   end
 
