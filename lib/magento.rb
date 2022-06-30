@@ -30,6 +30,8 @@ require_relative 'magento/tax_rule'
 require_relative 'magento/tax_rate'
 require_relative 'magento/video_content'
 require_relative 'magento/product_attributes'
+require_relative 'magento/categories_list'
+require_relative 'magento/categories_attributes'
 
 require_relative 'magento/params/create_custom_attribute'
 require_relative 'magento/params/create_image'
